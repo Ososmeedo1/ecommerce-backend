@@ -7,7 +7,6 @@ import jwt from 'jsonwebtoken'
  * @api {POST} /users/register Register a new user
  */
 
-
 export const register = async (req, res, next) => {
   const { username, email, password, gender, age, phone, userType, country, city, postalCode, buildingNumber, floorNumber, addressLabel } = req.body;
 
@@ -79,7 +78,7 @@ export const confirmEmail = async (req, res, n) => {
   // destructing user _id
   const { user } = req.user;
 
-  const userUpdate = await User.findByIdAndUpdate(user._id, { isConfirmed: true }, { new: true });
+  const userUpdate = await User.findByIdAndUpdate(user._id, { isEmailVerified: true }, { new: true });
 
   //return response
 
@@ -87,8 +86,7 @@ export const confirmEmail = async (req, res, n) => {
 }
 
 export const updateAccount = async (req, res, next) => {
-  const { userId } = req.params;
-  const { password, username } = req.body;
+  const userId = req.user._id;
 
   // search user
 
@@ -98,15 +96,80 @@ export const updateAccount = async (req, res, next) => {
     return next(new ErrorHandlerClass("User not exists", 404));
   }
 
-  if (password) {
-    user.password = password;
+  const { password, username, email, age , phone, userType, gender, country, city, postalCode, buildingNumber, floorNumber, addressLabel } = req.body;
+
+  if (password) user.password = password;
+
+  if (age) user.age = age;
+  if (phone) user.phone = phone;
+  if (userType) user.userType = userType;
+  if (gender) user.gender = gender;
+
+  if (country || city || postalCode || buildingNumber || floorNumber || addressLabel) {
+    const address = await Address.findOne({ userId: user._id, isDefault: true });
+    if (country) address.country = country;
+    if (city) address.city = city;
+    if (postalCode) address.postalCode = postalCode;
+    if (buildingNumber) address.buildingNumber = buildingNumber;
+    if (floorNumber) address.floorNumber = floorNumber;
+    if (addressLabel) address.addressLabel = addressLabel;
+    await address.save();
   }
 
   if (username) {
+    const checkUserName = await User.findOne({ username });
+
+    if (checkUserName) {
+      return next(new ErrorHandlerClass("Username already exists", 400));
+    }
+
     user.username = username;
+  }
+
+  if (email) {
+    const checkEmail = await User.findOne({ email });
+
+    if (checkEmail) {
+      return next(new ErrorHandlerClass("Email already exists", 400));
+    }
+
+    user.email = email;
   }
 
   await user.save();
 
-  return res.status(200).json({ message: "password has been changed" });
+  return res.status(200).json({ message: "data has been updated" });
+}
+
+export const deleteAccount = async (req, res, next) => {
+  const userId = req.user._id;
+  const user = await User.findByIdAndDelete(userId);
+
+  if (!user) {
+    return next(new ErrorHandlerClass("User does not exist", 404));
+  }
+
+  res.status(200).json({ message: "User account has been deleted successfully" });
+}
+
+export const getUserProfile = async (req, res, next) => {
+  const userId = req.user._id;
+
+  
+
+  const user = await User.findById(userId).select('-password');
+
+  if (!user) {
+    return next(new ErrorHandlerClass("User does not exist", 404));
+  }
+
+  const userInfo = {};
+
+  userInfo.user = user;
+
+  const address = await Address.findOne({ userId: user._id });
+
+  userInfo.address = address;
+
+  res.status(200).json({ message: "done", data: userInfo });
 }

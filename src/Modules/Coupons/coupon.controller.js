@@ -1,5 +1,6 @@
+import { DateTime } from "luxon";
 import { Coupon, CouponChangeLog, User } from "../../../DB/Models/index.js";
-import { ErrorHandlerClass } from "../../Utils/index.js";
+import { ApiFeatures, ErrorHandlerClass } from "../../Utils/index.js";
 
 /**
  * @api {post} /coupons/add Add coupon
@@ -26,7 +27,14 @@ export const addCoupon = async (req, res, next) => {
     return next(new ErrorHandlerClass("Invalid users", 400))
   }
 
-  const newCoupon = new Coupon({ couponCode, from, till, couponAmount, couponType, Users, addedBy: req.user._id });
+  const fromParsedDate = DateTime.fromFormat(from, 'yyyy-MM-dd', { zone: process.env.TIMEZONE }).toUTC().toJSDate();
+  const tillParsedDate = DateTime.fromFormat(till, 'yyyy-MM-dd', { zone: process.env.TIMEZONE }).toUTC().toJSDate();
+
+  console.log(fromParsedDate);
+  console.log(tillParsedDate);
+
+
+  const newCoupon = new Coupon({ couponCode, from: fromParsedDate, till: tillParsedDate, couponAmount, couponType, Users, addedBy: req.user._id });
 
   await newCoupon.save();
 
@@ -36,20 +44,22 @@ export const addCoupon = async (req, res, next) => {
 }
 
 export const getCoupons = async (req, res, next) => {
-  const { isEnabled } = req.query;
-  const filters = {};
-  if (isEnabled) {
-    filters.isEnabled = isEnabled === "true" ? true : false;
-  }
-  const coupons = await Coupon.find(filters);
+  const ApiFeaturesInstance = new ApiFeatures(Coupon.find(), req.query).filter().search().pagination().fields().sort();
+  const coupons = await ApiFeaturesInstance.mongooseQuery;
 
-  res.status(200).json({ message: "done", data: coupons });
+  if (coupons.length === 0) {
+    return res.status(200).json({ message: "Coupons does not exist", data: [] });
+  }
+
+  const page = ApiFeaturesInstance.pageNumber;
+  const total = await ApiFeaturesInstance.getCount();
+  res.status(200).json({ message: "done", page, total, data: coupons });
 }
 
 export const getCouponById = async (req, res, next) => {
   const { couponId } = req.params;
 
-  const coupon = await Coupon.findById(couponId);
+  const coupon = await Coupon.findById(couponId).populate([{ path: 'addedBy' }, { path: 'Users.userId' }]);
 
   if (!coupon) {
     return next(new ErrorHandlerClass("Coupon not exists", 404));
@@ -61,7 +71,7 @@ export const getCouponById = async (req, res, next) => {
 export const updateCoupon = async (req, res, next) => {
   const { couponId } = req.params;
   const userId = req.user._id;
-  const { couponCode, from, till, couponAmount, couponType, Users } = req.body;
+  const { couponCode, from, till, couponAmount, couponType, Users, isEnabled } = req.body;
 
 
   const coupon = await Coupon.findById(couponId);
@@ -83,13 +93,15 @@ export const updateCoupon = async (req, res, next) => {
   }
 
   if (from) {
-    coupon.from = from;
-    logUpdatedObject.changes.from = from;
+    const fromParsedDate = DateTime.fromFormat(from, 'yyyy-MM-dd', { zone: process.env.TIMEZONE }).toUTC().toJSDate();
+    coupon.from = fromParsedDate;
+    logUpdatedObject.changes.from = fromParsedDate;
   }
 
   if (till) {
-    coupon.till = till;
-    logUpdatedObject.changes.till = till;
+    const tillParsedDate = DateTime.fromFormat(till, 'yyyy-MM-dd', { zone: process.env.TIMEZONE }).toUTC().toJSDate();
+    coupon.till = tillParsedDate;
+    logUpdatedObject.changes.till = tillParsedDate;
   }
 
   if (couponAmount) {
@@ -115,39 +127,17 @@ export const updateCoupon = async (req, res, next) => {
     logUpdatedObject.changes.Users = Users;
   }
 
+  if (isEnabled) {
+    coupon.isEnabled = isEnabled;
+    logUpdatedObject.changes.isEnabled = isEnabled;
+
+    const logUpdatedObject = { couponId, updatedBy: userId, changes: { isEnabled } };
+
+    const log = await new CouponChangeLog(logUpdatedObject).save();
+  }
+
   await coupon.save();
-  const log = await new CouponChangeLog(logUpdatedObject).save();
 
   res.status(200).json({ message: "Coupon updated", data: { coupon, log } });
 
-}
-
-export const disableEnableCoupon = async (req, res, next) => {
-  const { couponId } = req.params;
-  const userId = req.user._id;
-  const { enable } = req.body;
-
-  const coupon = await Coupon.findById(couponId);
-
-  if (!coupon) {
-    return next(new ErrorHandlerClass("Coupon not exists", 404));
-  }
-
-  const logUpdatedObject = { couponId, updatedBy: userId, changes: {} };
-
-  if (enable === true) {
-    coupon.isEnabled = true;
-    logUpdatedObject.changes.isEnabled = true;
-  }
-
-  if (enable === false) {
-    coupon.isEnabled = false;
-    logUpdatedObject.changes.isEnabled = false;
-  }
-
-  await coupon.save();
-
-  const log = await new CouponChangeLog(logUpdatedObject).save();
-
-  res.status(200).json({ message: "done", data: { coupon, log } })
 }

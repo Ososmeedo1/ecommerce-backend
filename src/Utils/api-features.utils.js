@@ -74,5 +74,10 @@ export class ApiFeatures {
     return this;
   }
 
+  async getCount() {
+    const countQuery = this.mongooseQuery.model.countDocuments(this.mongooseQuery.getQuery());
+    return countQuery;
+  }
+
 
 }

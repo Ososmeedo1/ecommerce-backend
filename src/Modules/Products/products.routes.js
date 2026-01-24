@@ -1,22 +1,17 @@
 import { Router } from "express";
-// utils
 import { extensions } from "../../Utils/index.js";
-// controllers
 import * as productController from './products.controller.js'
-// models
+import * as productSchema from './products.schema.js';
+import { auth, checkIfIdsExist, errorHandle, multerHost, validationMiddleware } from "../../Middlewares/index.js";
 import { Brand } from "../../../DB/Models/index.js";
-// middlewares
-import * as Middlewares from './../../Middlewares/index.js'
 
 const productRouter = Router();
 
-const {multerHost, errorHandle, checkIfIdsExist} = Middlewares;
-
-productRouter.post('/add', multerHost(extensions.Images).array("images", 5), checkIfIdsExist(Brand), errorHandle(productController.addProduct))
-productRouter.put('/update/:productId', errorHandle(productController.updateProduct))
-productRouter.get('/list', errorHandle(productController.listProducts))
-productRouter.get('/:_id', errorHandle(productController.getSpecificProduct))
-productRouter.delete('/:_id', errorHandle(productController.deleteProduct))
+productRouter.post('/add', multerHost(extensions.Images).array("images", 5), auth(['Admin']), validationMiddleware(productSchema.addProduct), checkIfIdsExist(Brand), errorHandle(productController.addProduct))
+productRouter.put('/update/:productId', auth(['Admin']), validationMiddleware(productSchema.updateProduct), errorHandle(productController.updateProduct))
+productRouter.get('/list', auth(), validationMiddleware(productSchema.listProducts), errorHandle(productController.listProducts))
+productRouter.get('/:_id', auth(), validationMiddleware(productSchema.getAndDeleteSpecificProduct), errorHandle(productController.getSpecificProduct))
+productRouter.delete('/:_id', auth(['Admin']), validationMiddleware(productSchema.getAndDeleteSpecificProduct), errorHandle(productController.deleteProduct))
 
 
 export { productRouter };

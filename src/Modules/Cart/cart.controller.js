@@ -52,7 +52,7 @@ export const addToCart = async (req, res, next) => {
  */
 
 export const removeFromCart = async (req, res, next) => {
-  const userId = req.user;
+  const userId = req.user._id;
   const { productId } = req.params;
 
   const cart = await Cart.findOne({ userId, 'products.productId': productId });

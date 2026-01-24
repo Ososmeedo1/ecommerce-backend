@@ -89,10 +89,88 @@ export const addOrder = async (req, res, next) => {
 
   // decrement the stock of products
 
-  
+
 
   // increment the usageCount of coupon
 
   res.status(201).json({ message: "Order has been added", data: orderInfo });
 }
 
+export const cancelOrder = async (req, res, next) => {
+  const { orderId } = req.params;
+  const userId = req.user._id;
+
+  const order = await Order.findOne({ _id: orderId, userId });
+
+  if (!order) {
+    return next(new ErrorHandlerClass("Invalid order", 400));
+  }
+
+  if (order.orderStatus === OrderStatus.Cancelled) {
+    return next(new ErrorHandlerClass("Order already cancelled", 400));
+  }
+
+  if (order.orderStatus === OrderStatus.Delivered) {
+    return next(new ErrorHandlerClass("Can't cancel delivered order", 400));
+  }
+
+  order.orderStatus = OrderStatus.Cancelled;
+  order.cancelledBy = userId;
+  order.cancelledAt = Date.now();
+
+  await order.save();
+
+  res.status(200).json({ message: "Order has been cancelled", data: order });
+}
+
+export const orderDelivered = async (req, res, next) => {
+  const { orderId } = req.params;
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return next(new ErrorHandlerClass("Invalid order", 400));
+  }
+
+  if (order.orderStatus === OrderStatus.Delivered) {
+    return next(new ErrorHandlerClass("Order already delivered", 400));
+  }
+
+  order.orderStatus = OrderStatus.Delivered;
+  order.deliveredAt = Date.now();
+
+  await order.save();
+
+  res.status(200).json({ message: "Order has been delivered", data: order });
+}
+
+export const getUserOrders = async (req, res, next) => {
+  const userId = req.user._id;
+
+  const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+
+  if (orders.length === 0) {
+    return res.status(200).json({ message: "Orders does not exist", data: [] });
+  }
+
+  const total = orders.length;
+
+  res.status(200).json({ message: "done", total, data: orders });
+}
+
+export const getOrderDetails = async (req, res, next) => {
+  const { orderId } = req.params;
+  const userId = req.user._id;
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return next(new ErrorHandlerClass("Invalid order", 400));
+  }
+
+  if (order.userId.toString() !== userId.toString()) {
+    return next(new ErrorHandlerClass("You are not allowed to access this order", 403));
+  }
+
+  res.status(200).json({ message: "done", data: order });
+}

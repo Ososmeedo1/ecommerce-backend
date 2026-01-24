@@ -1,16 +1,15 @@
 import { Router } from "express";
-import { multerHost } from "../../Middlewares/multer.middleware.js";
+import { multerHost, errorHandle, auth, validationMiddleware } from "../../Middlewares/index.js";
 import { extensions } from "../../Utils/index.js";
-import { errorHandle } from "../../Middlewares/error-handle.middleware.js";
 import * as brandsController from './brands.controller.js'
-import { auth } from "../../Middlewares/auth.middleware.js";
+import * as brandSchema from './brands.schema.js'
 
 const brandRouter = Router();
 
-brandRouter.post('/add', multerHost(extensions.Images).single("image"), auth(['Admin']), errorHandle(brandsController.addBrand));
-brandRouter.get('/specific', errorHandle(brandsController.getBrand));
-brandRouter.put('/:_id', multerHost(extensions.Images).single("image"), errorHandle(brandsController.updateBrand));
-brandRouter.delete('/:_id', errorHandle(brandsController.deleteBrand));
+brandRouter.post('/add', multerHost(extensions.Images).single("image"), auth(['Admin']), validationMiddleware(brandSchema.addBrand), errorHandle(brandsController.addBrand));
+brandRouter.get('/specific', auth(), validationMiddleware(brandSchema.getBrand), errorHandle(brandsController.getBrand));
+brandRouter.put('/:_id', multerHost(extensions.Images).single("image"), auth(['Admin']), validationMiddleware(brandSchema.updateBrand), errorHandle(brandsController.updateBrand));
+brandRouter.delete('/:_id', auth(['Admin']), validationMiddleware(brandSchema.deleteBrand), errorHandle(brandsController.deleteBrand));
 
 
 export { brandRouter };

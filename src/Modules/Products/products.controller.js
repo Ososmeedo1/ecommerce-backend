@@ -142,7 +142,14 @@ export const listProducts = async (req, res, next) => {
 
   const products = await ApiFeaturesInstance.mongooseQuery;
 
-  return res.status(200).json({ message: "done", data: products })
+  if (products.length === 0) {
+    return res.status(200).json({ message: "Products doesn't exist", data: [] })
+  }
+
+  const page = ApiFeaturesInstance.pageNumber;
+  const total = await ApiFeaturesInstance.getCount();
+
+  return res.status(200).json({ message: "done", page, total, data: products })
 }
 
 /**

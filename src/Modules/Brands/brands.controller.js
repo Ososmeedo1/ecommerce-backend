@@ -21,7 +21,6 @@ export const addBrand = async (req, res, next) => {
 
   const searchSubCategory = await SubCategory.findOne({ _id: subCategory, categoryId: category }).populate('categoryId');
 
-
   if (!searchSubCategory) {
     return next(new ErrorHandlerClass("SubCategory not found", 404));
   }

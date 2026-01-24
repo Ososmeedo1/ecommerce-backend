@@ -98,9 +98,6 @@ export const updateSubCategory = async (req, res, next) => {
   if (req.file) {
     const splitedFilePath = subCategory.Image.filePath.split(`${subCategory.customId}/`)[1];
 
-
-
-
     const { url } = await imageKitConfig().upload({
       file: fs.readFileSync(req.file.path),
       folder: `${process.env.UPLOADS_FOLDER}/Categories/${subCategory.categoryId.customId}/SubCategories/${subCategory.customId}`,
@@ -143,6 +140,13 @@ export const listSubCategories = async (req, res, next) => {
 
   const subCategories = await ApiFeaturesInstance.mongooseQuery;
 
-  res.status(200).json({ message: "done", data: subCategories });
+  if (subCategories.length === 0) {
+    return res.status(200).json({ message: "sub-categories does not exist", data: [] });
+  }
+
+  const page = ApiFeaturesInstance.pageNumber;
+  const total = await ApiFeaturesInstance.getCount();
+
+  res.status(200).json({ message: "done", page, total, data: subCategories });
 }
 

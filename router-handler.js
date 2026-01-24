@@ -20,6 +20,7 @@ export const routerHandler = (app) => {
   app.use('/carts', routers.cartRouter);
   app.use('/coupons', routers.couponRouter);
   app.use('/orders', routers.orderRouter);
+  app.use('/reviews', routers.reviewRouter);
 
   app.use(globalResponse);
 }

@@ -56,7 +56,7 @@ export const addCategory = async (req, res, next) => {
 
 
 
-  const newCategory = await Category.create(category);
+  const newCategory = await new Category(category).save();
 
   // response
 
@@ -109,7 +109,7 @@ export const updateCategory = async (req, res, next) => {
     if (searchCategory) {
       return next(new ErrorHandlerClass("this category name already exists", 400));
     }
-    
+
     const slug = slugify(name, {
       replacement: '_',
       lower: true
@@ -165,7 +165,11 @@ export const listCategories = async (req, res, next) => {
 
   const ApiFeaturesInstance = new ApiFeatures(Category.find(), req.query).pagination().filter().fields().sort().search();
 
+  const page = ApiFeaturesInstance.pageNumber;
+
+  const total = await ApiFeaturesInstance.getCount();
+
   const categories = await ApiFeaturesInstance.mongooseQuery;
 
-  res.status(200).json({ message: "done", page: ApiFeaturesInstance.pageNumber, categories });
+  res.status(200).json({ message: "done", page: ApiFeaturesInstance.pageNumber, total, data: categories });
 }

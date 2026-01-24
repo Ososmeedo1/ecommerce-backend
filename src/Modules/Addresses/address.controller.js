@@ -22,7 +22,7 @@ export const addAddress = async (req, res, next) => {
     await Address.updateOne({ userId, isDefault: true }, { isDefault: false });
   }
 
-  const address = await newAddress.save();
+  await newAddress.save();
 
   return res.status(201).json({ message: "Address was added", data: newAddress })
 }
