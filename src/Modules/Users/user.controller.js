@@ -58,7 +58,7 @@ export const login = async (req, res, next) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    return next(ErrorHandlerClass("Invalid Credentials", 400));
+    return next(new ErrorHandlerClass("Invalid Credentials", 400));
   }
 
   // check password
