@@ -10,12 +10,17 @@ import jwt from 'jsonwebtoken'
 export const register = async (req, res, next) => {
   const { username, email, password, gender, age, phone, userType, country, city, postalCode, buildingNumber, floorNumber, addressLabel } = req.body;
 
-  // checking email
+  // checking username and email in one query
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ $or: [{ username }, { email }] });
 
   if (user) {
-    return next(new ErrorHandlerClass("Email already exists", 400));
+    if (user.username === username) {
+      return next(new ErrorHandlerClass("Username already exists", 400));
+    }
+    if (user.email === email) {
+      return next(new ErrorHandlerClass("Email already exists", 400));
+    }
   }
 
   // new user instance
@@ -29,7 +34,7 @@ export const register = async (req, res, next) => {
     phone,
     userType
   })
-  
+
 
   // new address instance
 
@@ -96,7 +101,7 @@ export const updateAccount = async (req, res, next) => {
     return next(new ErrorHandlerClass("User not exists", 404));
   }
 
-  const { password, username, email, age , phone, userType, gender, country, city, postalCode, buildingNumber, floorNumber, addressLabel } = req.body;
+  const { password, username, email, age, phone, userType, gender, country, city, postalCode, buildingNumber, floorNumber, addressLabel } = req.body;
 
   if (password) user.password = password;
 
@@ -155,7 +160,7 @@ export const deleteAccount = async (req, res, next) => {
 export const getUserProfile = async (req, res, next) => {
   const userId = req.user._id;
 
-  
+
 
   const user = await User.findById(userId).select('-password');
 
