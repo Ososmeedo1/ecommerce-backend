@@ -135,3 +135,11 @@ export const deleteBrand = async (req, res, next) => {
 
   return res.status(200).json({ message: "Brand has been deleted successfully" });
 }
+
+export const getAllBrands = async (req, res, next) => {
+  const { category, subCategory } = req.query;
+
+  const brands = await Brand.find({ categoryId: category, subCategoryId: subCategory }).populate([{ path: "categoryId" }, { path: "subCategoryId" }]);
+
+  return res.status(200).json({ message: "done", data: brands });
+}

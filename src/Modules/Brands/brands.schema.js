@@ -53,3 +53,14 @@ export const deleteBrand = {
     ...generalRules.headers
   }).unknown(true),
 }
+
+export const getAllBrands = {
+  headers: Joi.object({
+    ...generalRules.headers
+  }).unknown(true),
+
+  query: Joi.object({
+    category: generalRules.ObjectId.optional().messages(validationMessages('Category ID', "string", 24, 24)),
+    subCategory: generalRules.ObjectId.optional().messages(validationMessages('SubCategory ID', "string", 24, 24)),
+  })
+}
