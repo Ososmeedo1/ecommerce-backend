@@ -145,11 +145,13 @@ export const getAllRelatedBrands = async (req, res, next) => {
 }
 
 export const getAllBrands = async (req, res, next) => {
-  const ApiFeaturesInstacne = new ApiFeatures(Brand.find(), req.query).paginate().filter().search().sort();
+  const ApiFeaturesInstacne = new ApiFeatures(Brand.find(), req.query).pagination().filter().search().sort();
 
   const brands = await ApiFeaturesInstacne.mongooseQuery;
 
+  const page = ApiFeaturesInstacne.pageNumber;
+
   const total = await Brand.countDocuments();
 
-  return res.status(200).json({ message: "done", total, data: brands });
+  return res.status(200).json({ message: "done", total, page, data: brands });
 }
