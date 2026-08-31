@@ -1,6 +1,6 @@
 import slugify from "slugify";
 import { SubCategory, Brand } from "./../../../DB/Models/index.js";
-import { imageKitConfig, ErrorHandlerClass } from "../../Utils/index.js";
+import { imageKitConfig, ErrorHandlerClass, ApiFeatures } from "../../Utils/index.js";
 import { nanoid } from "nanoid";
 import fs from 'fs'
 import { DateTime } from "luxon";
@@ -136,10 +136,20 @@ export const deleteBrand = async (req, res, next) => {
   return res.status(200).json({ message: "Brand has been deleted successfully" });
 }
 
-export const getAllBrands = async (req, res, next) => {
+export const getAllRelatedBrands = async (req, res, next) => {
   const { category, subCategory } = req.query;
 
   const brands = await Brand.find({ categoryId: category, subCategoryId: subCategory }).populate([{ path: "categoryId" }, { path: "subCategoryId" }]);
 
   return res.status(200).json({ message: "done", data: brands });
+}
+
+export const getAllBrands = async (req, res, next) => {
+  const ApiFeaturesInstacne = new ApiFeatures(Brand.find(), req.query).paginate().filter().search().sort();
+
+  const brands = await ApiFeaturesInstacne.mongooseQuery;
+
+  const total = await Brand.countDocuments();
+
+  return res.status(200).json({ message: "done", total, data: brands });
 }
