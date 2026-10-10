@@ -58,7 +58,7 @@ export const getSubCategory = async (req, res, next) => {
 
   const queryFilter = {};
 
-  if (id) queryFilter.id = id;
+  if (id) queryFilter._id = id;
   if (name) queryFilter.name = name;
   if (slug) queryFilter.slug = slug;
 
