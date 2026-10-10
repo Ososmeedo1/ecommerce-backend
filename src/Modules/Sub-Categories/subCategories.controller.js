@@ -150,3 +150,24 @@ export const listSubCategories = async (req, res, next) => {
   res.status(200).json({ message: "done", page, total, data: subCategories });
 }
 
+export const getAllRelatedBrands = async (req, res, next) => {
+  const { category, subCategory } = req.query;
+
+  const relatedBrands = {};
+  const relatedBrandsPopulation = [];
+
+  if (category) {
+    relatedBrands.categoryId = category;
+    relatedBrandsPopulation.push({ path: "categoryId" });
+  }
+
+  if (subCategory) {
+    relatedBrands.subCategoryId = subCategory;
+    relatedBrandsPopulation.push({ path: "subCategoryId" });
+  }
+
+  const brands = await Brand.find(relatedBrands).populate(relatedBrandsPopulation);
+
+  return res.status(200).json({ message: "done", data: brands });
+}
+

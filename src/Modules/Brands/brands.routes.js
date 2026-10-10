@@ -10,7 +10,7 @@ brandRouter.post('/add', multerHost(extensions.Images).single("image"), auth(['A
 brandRouter.get('/specific', auth(), validationMiddleware(brandSchema.getBrand), errorHandle(brandsController.getBrand));
 brandRouter.put('/:_id', multerHost(extensions.Images).single("image"), auth(['Admin']), validationMiddleware(brandSchema.updateBrand), errorHandle(brandsController.updateBrand));
 brandRouter.delete('/:_id', auth(['Admin']), validationMiddleware(brandSchema.deleteBrand), errorHandle(brandsController.deleteBrand));
-brandRouter.get('/related', auth(), validationMiddleware(brandSchema.getAllRelatedBrands), errorHandle(brandsController.getAllRelatedBrands));
+brandRouter.get('/related', validationMiddleware(brandSchema.getAllRelatedBrands), errorHandle(brandsController.getAllRelatedBrands));
 brandRouter.get('/', validationMiddleware(brandSchema.getAllBrands), errorHandle(brandsController.getAllBrands));
 
 
