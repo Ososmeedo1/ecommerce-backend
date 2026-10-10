@@ -11,7 +11,7 @@ brandRouter.get('/specific', auth(), validationMiddleware(brandSchema.getBrand),
 brandRouter.put('/:_id', multerHost(extensions.Images).single("image"), auth(['Admin']), validationMiddleware(brandSchema.updateBrand), errorHandle(brandsController.updateBrand));
 brandRouter.delete('/:_id', auth(['Admin']), validationMiddleware(brandSchema.deleteBrand), errorHandle(brandsController.deleteBrand));
 brandRouter.get('/related', auth(), validationMiddleware(brandSchema.getAllRelatedBrands), errorHandle(brandsController.getAllRelatedBrands));
-brandRouter.get('/', auth(), validationMiddleware(brandSchema.getAllBrands), errorHandle(brandsController.getAllBrands));
+brandRouter.get('/', validationMiddleware(brandSchema.getAllBrands), errorHandle(brandsController.getAllBrands));
 
 
 export { brandRouter };

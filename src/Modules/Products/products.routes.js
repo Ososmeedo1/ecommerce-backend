@@ -9,7 +9,7 @@ const productRouter = Router();
 
 productRouter.post('/add', multerHost(extensions.Images).array("images", 10), auth(['Admin']), validationMiddleware(productSchema.addProduct), checkIfIdsExist(Brand), errorHandle(productController.addProduct))
 productRouter.put('/update/:productId', auth(['Admin']), validationMiddleware(productSchema.updateProduct), errorHandle(productController.updateProduct))
-productRouter.get('/list', auth(), validationMiddleware(productSchema.listProducts), errorHandle(productController.listProducts))
+productRouter.get('/list', validationMiddleware(productSchema.listProducts), errorHandle(productController.listProducts))
 productRouter.get('/:_id', auth(), validationMiddleware(productSchema.getAndDeleteSpecificProduct), errorHandle(productController.getSpecificProduct))
 productRouter.delete('/:_id', auth(['Admin']), validationMiddleware(productSchema.getAndDeleteSpecificProduct), errorHandle(productController.deleteProduct))
 
