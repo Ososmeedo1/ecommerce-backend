@@ -133,8 +133,8 @@ export const updateCoupon = async (req, res, next) => {
 
     const logUpdatedObject = { couponId, updatedBy: userId, changes: { isEnabled } };
 
-    const log = await new CouponChangeLog(logUpdatedObject).save();
   }
+  const log = await new CouponChangeLog(logUpdatedObject).save();
 
   await coupon.save();
 
