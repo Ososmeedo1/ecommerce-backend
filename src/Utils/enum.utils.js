@@ -5,8 +5,8 @@ export const Badges = {
 }
 
 export const DiscountType = {
-  PERCENTAGE: "Percentage",
-  FIXED: "Fixed"
+  PERCENTAGE: "PERCENTAGE",
+  FIXED: "FIXED"
 }
 
 export const CouponType = {
@@ -15,8 +15,6 @@ export const CouponType = {
 }
 
 export const PaymentMethods = {
-  Stripe: "stripe",
-  Paymob: "paymob",
   Cash: "cash"
 }
 

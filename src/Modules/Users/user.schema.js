@@ -9,7 +9,7 @@ export const register = {
     email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'org'] } }).required().lowercase().messages(validationMessages("email", "string")),
     password: Joi.string().regex(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@!%*?&#])[A-Za-z\d@!%*?&#]{8,}$/).required().messages(validationMessages("password", "string", 8, null, "at least one uppercase letter, one lowercase letter, one digit, and one special character (@!%*?&#)")),
     age: Joi.number().min(12).max(100).optional().messages(validationMessages("age", "number", 12, 100)),
-    userType: Joi.string().valid('Buyer', 'Admin').required().messages(validationMessages("user type", "string", null, null, "role must be Buyer or Admin")),
+    userType: Joi.string().valid(...Object.values(UserType)).required().messages(validationMessages("user type", "string", null, null, "role must be Buyer or Admin")),
     gender: Joi.string().valid('male', 'female').required().messages(validationMessages("gender", "string", null, null, "gender must be male or female")),
     phone: Joi.string().regex(/^01[0125][0-9]{8}$/).optional().messages(validationMessages("phone", "string", null, null, "phone must be a valid Egyptian mobile number")),
     country: Joi.string().required().min(3).max(50).messages(validationMessages("country", "string", 3, 50)),

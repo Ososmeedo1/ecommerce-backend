@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { Address, Cart, Order } from "../../../DB/Models/index.js";
-import { CouponType, ErrorHandlerClass, OrderStatus, PaymentMethods } from "../../Utils/index.js";
+import { CouponType, ErrorHandlerClass, OrderStatus } from "../../Utils/index.js";
 import { calcCartTotal } from "../Cart/Utils/cart.utils.js";
 import { applyCoupon, validateCoupon } from "./order.utils.js";
 
@@ -57,11 +57,8 @@ export const addOrder = async (req, res, next) => {
 
   }
 
-  let orderStatus = OrderStatus.Pending;
-
-  if (paymentMethod === PaymentMethods.Cash) {
-    orderStatus = OrderStatus.Placed;
-  }
+  // Checkout is cash-only: every order is placed immediately.
+  const orderStatus = OrderStatus.Placed;
 
   const orderInfo = new Order({
     userId,

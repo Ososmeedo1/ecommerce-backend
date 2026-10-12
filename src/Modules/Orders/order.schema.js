@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { generalRules, validationMessages } from "../../Utils/index.js";
+import { generalRules, PaymentMethods, validationMessages } from "../../Utils/index.js";
 
 
 
@@ -10,7 +10,7 @@ export const addOrder = {
     couponCode: Joi.string().optional().messages(validationMessages('couponCode', 'string')),
     shippingFee: Joi.number().min(0).required().messages(validationMessages('shippingFee', 'number')),
     VAT: Joi.number().min(0).required().messages(validationMessages('VAT', 'number')),
-    paymentMethod: Joi.string().valid('cash', 'card').required().messages(validationMessages('paymentMethod', 'string'))
+    paymentMethod: Joi.string().valid(...Object.values(PaymentMethods)).required().messages(validationMessages('paymentMethod', 'string'))
   }),
 
   headers: Joi.object({
