@@ -4,7 +4,7 @@ import bootstrap from "./bootstrap.js"
 const port = process.env.PORT || 3000;
 
 const app = express();
-console.log("Node.js version:", process.version);
+
 await bootstrap(app, express)
 
 // Vercel serverless uses the exported app; only listen on long-lived hosts.
