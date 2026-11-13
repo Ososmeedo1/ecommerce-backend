@@ -51,6 +51,36 @@ const userSchema = new Schema(
     isMarkedAsDeleted: {
       type: Boolean,
       default: false
+    },
+    // Password-reset state. Every field is `select: false` so it never leaks
+    // through profile/user responses; controllers opt in explicitly.
+    passwordResetOtpHash: {
+      type: String,
+      select: false
+    },
+    passwordResetOtpExpiresAt: {
+      type: Date,
+      select: false
+    },
+    passwordResetOtpTokenHash: {
+      type: String,
+      select: false,
+      index: true
+    },
+    passwordResetTokenHash: {
+      type: String,
+      select: false,
+      index: true
+    },
+    passwordResetTokenExpiresAt: {
+      type: Date,
+      select: false
+    },
+    // Any JWT issued before this instant is rejected by the auth middleware,
+    // so resetting/changing a password invalidates existing sessions.
+    passwordChangedAt: {
+      type: Date,
+      select: false
     }
   }, 
   {

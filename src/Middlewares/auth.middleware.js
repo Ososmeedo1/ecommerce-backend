@@ -29,10 +29,22 @@ export const auth = (roles = ['Buyer', "Admin"]) => {
 
     // check user
 
-    const user = await User.findById(decodedToken.id).select('-password');
+    const user = await User.findById(decodedToken.id).select('-password +passwordChangedAt');
 
     if (!user) {
       return next(new ErrorHandlerClass("User not found", 404));
+    }
+
+    // Password reset/change invalidates every JWT issued before the change.
+    // Tokens carry the password version (`pwd`, in milliseconds) that was
+    // current when they were signed. Older tokens have no claim (`0`), so
+    // sessions created before this feature keep working until the next
+    // password change.
+    if (user.passwordChangedAt) {
+      const tokenPasswordVersion = decodedToken.pwd ?? 0;
+      if (tokenPasswordVersion < user.passwordChangedAt.getTime()) {
+        return next(new ErrorHandlerClass("Session expired. Please log in again.", 401));
+      }
     }
 
     // check authorization
