@@ -82,6 +82,21 @@ The older reference names `USER_SEND_EMAIL_SERVICE` and
 `PASSWORD_SEND_EMAIL_SERVICE` are accepted as fallbacks when `EMAIL_USER` /
 `EMAIL_PASS` are unset.
 
+### Reset email contents
+
+The reset email places one clearly-labelled OTP near the top of both the HTML
+and plain-text alternatives, and uses a code-first verification subject. It
+also includes a prominent **Copy code manually** visual control that tells the
+recipient to select the visible OTP and use their device's Copy command.
+
+Email clients block JavaScript and clipboard access, so this visual control is
+not clickable and does not claim to copy anything itself. Gmail may show its
+own native "Copy code" card when it recognizes the message, but that behavior
+is controlled by Gmail and cannot be forced or guaranteed by email markup.
+
+Because the email contains no server link, no public app URL configuration is
+needed.
+
 If SMTP is not configured or delivery fails, `forgot-password` returns a
 502 error and removes the generated OTP; it never reports a false success.
 

@@ -280,7 +280,6 @@ export const forgotPassword = async (req, res, next) => {
     await sendEmailService({
       to: user.email,
       name: user.username,
-      subject: "Your Masar password reset code",
       message: otp,
       expiresInMinutes: OTP_EXPIRY_MINUTES,
     });
