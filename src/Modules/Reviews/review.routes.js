@@ -6,7 +6,7 @@ import * as reviewSchema from './review.schema.js';
 const reviewRouter = Router();
 
 reviewRouter.post('/add', auth(), validationMiddleware(reviewSchema.addReview), errorHandle(reviewController.addReview))
-reviewRouter.get('/:productId', auth(), validationMiddleware(reviewSchema.listReviews), errorHandle(reviewController.listReviews))
+reviewRouter.get('/list/:productId', auth(), validationMiddleware(reviewSchema.listReviews), errorHandle(reviewController.listReviews))
 reviewRouter.patch('/action/:reviewId', auth(["Admin"]), validationMiddleware(reviewSchema.approveOrRejectReview), errorHandle(reviewController.approveOrRejectReview))
 
 export { reviewRouter };

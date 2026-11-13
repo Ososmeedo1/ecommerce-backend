@@ -44,7 +44,7 @@ export const listReviews = async (req, res, next) => {
 
   const { productId } = req.params;
 
-  const product = await Product.find(productId).populate([{ path: 'userId', select: "userName email -_id" }, { path: "productId", select: "title -_id" }]);
+  const reviews = await Review.find({ productId }).populate([{ path: 'userId', select: "username email -_id" }, { path: "productId", select: "title -_id" }]);
 
   if (reviews.length == 0) {
     return next(new ErrorHandlerClass("No Reviews yet", 404));
