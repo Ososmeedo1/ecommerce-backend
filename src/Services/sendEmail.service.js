@@ -1,10 +1,12 @@
+
 import nodemailer from "nodemailer";
 
 const DEFAULT_EXPIRY_MINUTES = 10;
-const DEFAULT_SUBJECT = "Your Masar verification code";
+const DEFAULT_SUBJECT = "Your Masar password reset code";
 
-const otpSubject = (otp) =>
-  `${otp} is your Masar verification code`;
+/* --------------------------------
+   Helpers
+--------------------------------- */
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -13,6 +15,8 @@ const escapeHtml = (value) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+
+const otpSubject = () => DEFAULT_SUBJECT;
 
 function getMailConfig() {
   const host = (process.env.EMAIL_HOST || "").trim();
@@ -45,8 +49,13 @@ function getMailConfig() {
 
   if (!user || !pass || !from) {
     throw new Error(
-      "Email service is not configured. Set EMAIL_USER/EMAIL_PASS/EMAIL_FROM " +
-        "(or USER_SEND_EMAIL_SERVICE/PASSWORD_SEND_EMAIL_SERVICE)."
+      "Email service is not configured. Set EMAIL_USER, EMAIL_PASS and EMAIL_FROM."
+    );
+  }
+
+  if (!host && !service) {
+    throw new Error(
+      "Email service requires EMAIL_HOST or EMAIL_SERVICE."
     );
   }
 
@@ -66,8 +75,12 @@ function getMailConfig() {
   };
 }
 
-function buildTransport(config) {
-  const options = config.host
+/* --------------------------------
+   Mail Transport
+--------------------------------- */
+
+function createTransporter(config) {
+  const transportOptions = config.host
     ? {
         host: config.host,
         port: config.port,
@@ -77,152 +90,108 @@ function buildTransport(config) {
         service: config.service,
       };
 
-  options.auth = {
-    user: config.user,
-    pass: config.pass,
-  };
+  return nodemailer.createTransport({
+    ...transportOptions,
 
-  options.connectionTimeout = 10000;
-  options.greetingTimeout = 10000;
-  options.socketTimeout = 20000;
+    auth: {
+      user: config.user,
+      pass: config.pass,
+    },
 
-  return nodemailer.createTransport(options);
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
+  });
 }
 
-function renderOtpEmail({
-  name,
-  otp,
-  expiresInMinutes,
-}) {
-  const safeName = escapeHtml(name || "there");
-  const safeOtp = escapeHtml(otp);
+/* --------------------------------
+   Plain Text Template
+--------------------------------- */
 
-  const minutes =
-    Number(expiresInMinutes) || DEFAULT_EXPIRY_MINUTES;
-
-  // Plain text version
-  const text = [
-    `Hi ${name || "there"},`,
+function buildTextEmail({ name, otp, minutes }) {
+  return [
+    `Hello ${name},`,
     "",
-    "Your Masar verification code is:",
+    "Your Masar password reset verification code is:",
     "",
     otp,
     "",
-    "COPY CODE",
-    "Select the verification code above and use your device's Copy command.",
-    "",
     `This code expires in ${minutes} minutes.`,
     "",
+    "Enter this code on the password reset page to continue.",
+    "",
+    "Security notice:",
     "Never share this code with anyone.",
-    "Masar will never ask for it by phone, chat or email.",
+    "Masar will never ask for your verification code by phone, chat or email.",
     "",
     "If you did not request a password reset, you can safely ignore this email.",
     "",
     "Masar",
   ].join("\n");
+}
 
-  // HTML version
-  const html = `<!DOCTYPE html>
+/* --------------------------------
+   HTML Email Template
+--------------------------------- */
+
+function buildHtmlEmail({ name, otp, minutes }) {
+  const safeName = escapeHtml(name);
+  const safeOtp = escapeHtml(otp);
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="x-apple-disable-message-reformatting">
-
-  <title>Masar verification code</title>
-
-  <style>
-    body {
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100% !important;
-      background-color: #000000;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    table {
-      border-collapse: collapse;
-    }
-
-    @media only screen and (max-width: 600px) {
-      .email-card {
-        width: 100% !important;
-      }
-
-      .email-padding {
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-      }
-
-      .otp-code {
-        font-size: 27px !important;
-        letter-spacing: 6px !important;
-        padding: 16px 20px !important;
-      }
-    }
-  </style>
+  <title>Masar Password Reset</title>
 </head>
 
-<body style="margin:0;padding:0;background-color:#000000;">
+<body style="
+  margin:0;
+  padding:0;
+  background-color:#0B0B0B;
+  font-family:Arial,Helvetica,sans-serif;
+">
 
-  <!-- Preheader -->
-  <div style="
-    display:none;
-    max-height:0;
-    overflow:hidden;
-    opacity:0;
-    color:#000000;
-    font-size:1px;
-    line-height:1px;
-  ">
-    ${safeOtp} is your Masar verification code.
-    It expires in ${minutes} minutes.
-  </div>
-
-  <!-- Main container -->
   <table
     role="presentation"
     width="100%"
     cellpadding="0"
     cellspacing="0"
     border="0"
-    bgcolor="#000000"
-    style="width:100%;background-color:#000000;"
+    bgcolor="#0B0B0B"
+    style="background-color:#0B0B0B;width:100%;"
   >
     <tr>
       <td align="center" style="padding:30px 15px;">
 
-        <!-- Email card -->
+        <!-- Main Card -->
         <table
           role="presentation"
           width="560"
           cellpadding="0"
           cellspacing="0"
           border="0"
-          bgcolor="#121212"
-          class="email-card"
+          bgcolor="#171717"
           style="
             width:100%;
             max-width:560px;
-            background-color:#121212;
-            border-top:4px solid #F5C542;
+            background-color:#171717;
             border-radius:14px;
+            border-top:4px solid #F5C542;
           "
         >
 
-          <!-- Logo -->
+          <!-- Brand -->
           <tr>
-            <td
-              align="center"
-              style="padding:35px 20px 10px;"
-            >
+            <td align="center" style="padding:35px 20px 10px;">
               <h1 style="
                 margin:0;
-                font-family:Arial,Helvetica,sans-serif;
+                color:#F5C542;
                 font-size:32px;
                 line-height:40px;
                 font-weight:700;
-                color:#F5C542;
               ">
                 Masar
               </h1>
@@ -233,17 +202,15 @@ function renderOtpEmail({
           <tr>
             <td
               align="center"
-              class="email-padding"
               style="
-                padding:20px 35px 0;
-                font-family:Arial,Helvetica,sans-serif;
+                padding:20px 25px 0;
+                color:#FFFFFF;
                 font-size:24px;
                 line-height:32px;
                 font-weight:700;
-                color:#FFFFFF;
               "
             >
-              Your verification code
+              Password Reset
             </td>
           </tr>
 
@@ -251,42 +218,39 @@ function renderOtpEmail({
           <tr>
             <td
               align="center"
-              class="email-padding"
               style="
-                padding:12px 35px 0;
-                font-family:Arial,Helvetica,sans-serif;
+                padding:15px 30px 0;
+                color:#CCCCCC;
                 font-size:15px;
                 line-height:24px;
-                color:#B8B8B8;
               "
             >
-              Hi ${safeName}, use this one-time code
-              to reset your Masar password.
+              Hello ${safeName},
+              <br>
+              Use the verification code below to reset your password.
             </td>
           </tr>
 
-          <!-- OTP label -->
+          <!-- OTP Label -->
           <tr>
             <td
               align="center"
               style="
-                padding:28px 20px 10px;
-                font-family:Arial,Helvetica,sans-serif;
+                padding:30px 20px 10px;
+                color:#AAAAAA;
                 font-size:12px;
                 line-height:18px;
                 font-weight:700;
                 letter-spacing:1.5px;
-                color:#AAAAAA;
               "
             >
               YOUR VERIFICATION CODE
             </td>
           </tr>
 
-          <!-- OTP code -->
+          <!-- OTP: Keep this as selectable text -->
           <tr>
             <td align="center" style="padding:8px 15px 0;">
-
               <table
                 role="presentation"
                 cellpadding="0"
@@ -298,85 +262,22 @@ function renderOtpEmail({
                   <td
                     align="center"
                     bgcolor="#F5C542"
-                    class="otp-code"
                     style="
                       background-color:#F5C542;
-                      padding:18px 35px;
+                      padding:18px 30px;
                       border-radius:10px;
-                      font-family:'Courier New',monospace;
-                      font-size:36px;
-                      line-height:44px;
-                      font-weight:700;
-                      letter-spacing:10px;
                       color:#000000;
-                      -webkit-user-select:all;
-                      user-select:all;
+                      font-family:'Courier New',monospace;
+                      font-size:34px;
+                      line-height:42px;
+                      font-weight:700;
+                      letter-spacing:8px;
                     "
                   >
                     ${safeOtp}
                   </td>
                 </tr>
               </table>
-
-            </td>
-          </tr>
-
-          <!-- COPY CODE visual button -->
-          <tr>
-            <td
-              align="center"
-              style="padding:22px 20px 0;"
-            >
-
-              <table
-                role="presentation"
-                width="260"
-                cellpadding="0"
-                cellspacing="0"
-                border="0"
-                align="center"
-                bgcolor="#F5C542"
-                style="
-                  width:260px;
-                  max-width:100%;
-                  background-color:#F5C542;
-                  border:2px solid #F5C542;
-                  border-radius:8px;
-                "
-              >
-                <tr>
-                  <td
-                    align="center"
-                    valign="middle"
-                    bgcolor="#F5C542"
-                    style="
-                      background-color:#F5C542;
-                      padding:15px 20px;
-                      font-family:Arial,Helvetica,sans-serif;
-                      font-size:16px;
-                      line-height:22px;
-                      font-weight:700;
-                      letter-spacing:1px;
-                      color:#000000;
-                    "
-                  >
-                    COPY CODE
-                  </td>
-                </tr>
-              </table>
-
-              <div style="
-                padding:12px 10px 0;
-                font-family:Arial,Helvetica,sans-serif;
-                font-size:12px;
-                line-height:19px;
-                color:#D0D0D0;
-                text-align:center;
-              ">
-                Select the verification code above,
-                then use your device's Copy command.
-              </div>
-
             </td>
           </tr>
 
@@ -385,54 +286,82 @@ function renderOtpEmail({
             <td
               align="center"
               style="
-                padding:24px 20px 0;
-                font-family:Arial,Helvetica,sans-serif;
+                padding:25px 20px 0;
+                color:#F5C542;
                 font-size:14px;
                 line-height:22px;
-                color:#F5C542;
               "
             >
               This code expires in ${minutes} minutes.
             </td>
           </tr>
 
-          <!-- Divider -->
+          <!-- Instructions -->
           <tr>
-            <td style="padding:30px 35px 0;">
-              <div style="
-                height:1px;
-                line-height:1px;
-                background-color:#333333;
-              ">
-                &nbsp;
-              </div>
+            <td
+              align="center"
+              style="
+                padding:15px 30px 0;
+                color:#CCCCCC;
+                font-size:14px;
+                line-height:23px;
+              "
+            >
+              Enter this code on the password reset page to continue.
             </td>
           </tr>
 
-          <!-- Security notice -->
+          <!-- Divider -->
+          <tr>
+            <td style="padding:30px 35px 0;">
+              <table
+                role="presentation"
+                width="100%"
+                cellpadding="0"
+                cellspacing="0"
+                border="0"
+              >
+                <tr>
+                  <td
+                    height="1"
+                    bgcolor="#333333"
+                    style="height:1px;background-color:#333333;"
+                  ></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Security Notice -->
           <tr>
             <td
               align="center"
               style="
                 padding:25px 30px 35px;
-                font-family:Arial,Helvetica,sans-serif;
+                color:#999999;
                 font-size:13px;
                 line-height:22px;
-                color:#999999;
               "
             >
-              Never share this code with anyone.
-              Masar will never ask for it by phone, chat or email.
+              <strong style="color:#CCCCCC;">
+                Security notice
+              </strong>
 
               <br><br>
 
-              Didn't request it?
-              You can safely ignore this email.
+              Never share this code with anyone.
+              Masar will never ask for your verification code
+              by phone, chat or email.
+
+              <br><br>
+
+              If you did not request a password reset,
+              you can safely ignore this email.
             </td>
           </tr>
 
         </table>
-        <!-- End email card -->
+        <!-- End Main Card -->
 
         <!-- Footer -->
         <table
@@ -447,11 +376,10 @@ function renderOtpEmail({
             <td
               align="center"
               style="
-                padding:24px 15px 0;
-                font-family:Arial,Helvetica,sans-serif;
+                padding:25px 15px 0;
+                color:#777777;
                 font-size:12px;
                 line-height:18px;
-                color:#777777;
               "
             >
               Masar. All rights reserved.
@@ -465,16 +393,46 @@ function renderOtpEmail({
 
 </body>
 </html>`;
+}
+
+/* --------------------------------
+   Email Renderer
+--------------------------------- */
+
+function renderOtpEmail({
+  name,
+  otp,
+  expiresInMinutes = DEFAULT_EXPIRY_MINUTES,
+}) {
+  const safeName = String(name || "there");
+  const safeOtp = String(otp ?? "");
+
+  const parsedMinutes = Number(expiresInMinutes);
+
+  const minutes =
+    Number.isFinite(parsedMinutes) && parsedMinutes > 0
+      ? parsedMinutes
+      : DEFAULT_EXPIRY_MINUTES;
 
   return {
-    html,
-    text,
+    subject: otpSubject(),
+    text: buildTextEmail({
+      name: safeName,
+      otp: safeOtp,
+      minutes,
+    }),
+    html: buildHtmlEmail({
+      name: safeName,
+      otp: safeOtp,
+      minutes,
+    }),
   };
 }
 
-/**
- * Send a password-reset OTP email.
- */
+/* --------------------------------
+   Send Email Service
+--------------------------------- */
+
 export const sendEmailService = async ({
   name = "User",
   to,
@@ -484,15 +442,14 @@ export const sendEmailService = async ({
 }) => {
   if (!to || !message) {
     throw new Error(
-      "sendEmailService requires `to` and `message`."
+      "sendEmailService requires both `to` and `message`."
     );
   }
 
   const config = getMailConfig();
+  const transporter = createTransporter(config);
 
-  const transporter = buildTransport(config);
-
-  const { html, text } = renderOtpEmail({
+  const email = renderOtpEmail({
     name,
     otp: message,
     expiresInMinutes,
@@ -505,11 +462,9 @@ export const sendEmailService = async ({
   return transporter.sendMail({
     from,
     to,
-
-    subject: subject || otpSubject(message) || DEFAULT_SUBJECT,
-
-    text,
-    html,
+    subject: subject || email.subject,
+    text: email.text,
+    html: email.html,
 
     ...(process.env.EMAIL_REPLY_TO
       ? { replyTo: process.env.EMAIL_REPLY_TO }
@@ -517,7 +472,10 @@ export const sendEmailService = async ({
   });
 };
 
-// Exported for testing
+/* --------------------------------
+   Exports
+--------------------------------- */
+
 export {
   renderOtpEmail,
   otpSubject,
